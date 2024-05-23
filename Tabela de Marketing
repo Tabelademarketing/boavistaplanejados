@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela de Preços de Produtos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .total {
+            text-align: right;
+            font-weight: bold;
+        }
+        .editable {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            background: transparent;
+        }
+        .editable:focus {
+            outline: 2px solid #007BFF;
+        }
+        .remove-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        .remove-btn:focus {
+            outline: none;
+        }
+        .notes {
+            margin-top: 20px;
+        }
+        .notes textarea {
+            width: 100%;
+            height: 100px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tabela de Preços de Produtos</h1>
+        <label for="supplierName">Nome do Fornecedor:</label>
+        <input type="text" id="supplierName" class="editable" placeholder="Digite o nome do fornecedor">
+        <br><br>
+        <label for="productSelect">Selecione um produto:</label>
+        <select id="productSelect">
+            <option value="">Selecione um produto</option>
+            <option value="Produto A">Produto A</option>
+            <option value="Produto B">Produto B</option>
+            <option value="Produto C">Produto C</option>
+            <option value="Produto D">Produto D</option>
+            <option value="Produto E">Produto E</option>
+        </select>
+        <button onclick="addProduct()">Adicionar Produto</button>
+        <table id="priceTable">
+            <thead>
+                <tr>
+                    <th>Ações</th>
+                    <th>Nome do Item</th>
+                    <th>Quantidade</th>
+                    <th>Valor por Item (R$)</th>
+                    <th>Peso por Item (kg)</th>
+                    <th>Valor Final (R$)</th>
+                    <th>Peso Total (kg)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" class="total">Total</td>
+                    <td id="totalPrice">0.00</td>
+                    <td id="totalWeight">0.00</td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="notes">
+            <label for="observations">Observações:</label>
+            <textarea id="observations" placeholder="Escreva suas observações aqui..."></textarea>
+        </div>
+        <br>
+        <label for="email">Enviar para (E-mail):</label>
+        <input type="email" id="email" class="editable" placeholder="Digite o e-mail">
+        <button onclick="sendEmail()">Enviar</button>
+    </div>
+
+    <script>
+        const productPrices = {
+            "Produto A": { price: 10, weight: 0.5 },
+            "Produto B": { price: 20, weight: 0.7 },
+            "Produto C": { price: 30, weight: 1.0 },
+            "Produto D": { price: 15, weight: 0.3 },
+            "Produto E": { price: 25, weight: 0.8 }
+        };
+
+        // Função para adicionar um produto à tabela
+        function addProduct() {
+            const productName = document.getElementById('productSelect').value;
+            if (!productName) {
+                alert("Selecione um produto primeiro.");
+                return;
+            }
+
+            const product = productPrices[productName];
+            const tableBody = document.querySelector("#priceTable tbody");
+            const newRow = document.createElement("tr");
+
+            newRow.innerHTML = `
+                <td><button onclick="removeProduct(this)" class="remove-btn">Remover</button></td>
+                <td>${productName}</td>
+                <td><input type="number" value="1" class="quantity" oninput="updateTable()"></td>
+                <td><input type="number" value="${product.price}" class="price" oninput="updateTable()"></td>
+                <td>${product.weight}</td>
+                <td class="finalPrice">0.00</td>
+                <td class="totalWeight">0.00</td>
+            `;
+
+            tableBody.appendChild(newRow);
+            updateTable();
+        }
+
+        // Função para remover produto da tabela
+        function removeProduct(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+            updateTable();
+        }
+
+        // Função para atualizar a tabela
+        function updateTable() {
+            const table = document.getElementById('priceTable');
+            let total = 0;
+            let totalWeight = 0;
+
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+                const unitPrice = parseFloat(row.querySelector('.price').value) || 0;
+                const weight = parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0;
+                const finalPrice = row.querySelector('.finalPrice');
+                const totalWeightCell = row.querySelector('.totalWeight');
+
+                const finalValue = quantity * unitPrice;
+                finalPrice.textContent = finalValue.toFixed(2);
+
+                const totalWeightValue = quantity * weight;
+                totalWeightCell.textContent = totalWeightValue.toFixed(2);
+
+                total += finalValue;
+                totalWeight += totalWeightValue;
+            });
+
+            document.getElementById('totalPrice').textContent = total.toFixed(2);
+            document.getElementById('totalWeight').textContent = totalWeight.toFixed(2);
+        }
+
+        // Função para enviar e-mail (simulação)
+        function sendEmail() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                alert("Digite um e-mail para enviar.");
+                return;
+            }
+
+            const supplierName = document.getElementById('supplierName').value;
+            const observations = document.getElementById('observations').value;
+            let tableContent = `
+                <h1>Tabela de Preços de Produtos</h1>
+                <p>Fornecedor: ${supplierName}</p>
+                <table border="1" style="border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>Nome do Item</th>
+                            <th>Quantidade</th>
+                            <th>Valor por Item (R$)</th>
+                            <th>Peso por Item (kg)</th>
+                            <th>Valor Final (R$)</th>
+                            <th>Peso Total (kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const rows = document.querySelectorAll("#priceTable tbody tr");
+            rows.forEach(row => {
+                const itemName = row.querySelector('td:nth-child(2)').textContent;
+                const quantity = row.querySelector('.quantity').value;
+                const unitPrice = row.querySelector('.price').value;
+                const weight = row.querySelector('td:nth-child(5)').textContent;
+                const finalPrice = row.querySelector('.finalPrice').textContent;
+                const totalWeight = row.querySelector('.totalWeight').textContent;
+
+                tableContent += `
+                    <tr>
+                        <td>${itemName}</td>
+                        <td>${quantity}</td>
+                        <td>${unitPrice}</td>
+                        <td>${weight}</td>
+                        <td>${finalPrice}</td>
+                        <td>${totalWeight}</td>
+                    </tr>
+                `;
+            });
+
+            tableContent += `
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" style="text-align: right; font-weight: bold;">Total</td>
+                            <td>${document.getElementById('totalPrice').textContent}</td>
+                            <td>${document.getElementById('totalWeight').textContent}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <p>Observações: ${observations}</p>
+            `;
+
+            // Aqui estamos simulando o envio de e-mail apenas imprimindo no console
+            console.log(`Enviando e-mail para: ${email}`);
+            console.log(tableContent);
+
+            alert("Tabela enviada com sucesso para " + email);
+        }
+    </script>
+</body>
+</html>
